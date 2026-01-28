@@ -22,6 +22,8 @@ const STORAGE_DEFAULTS = {
   billing_plan: 'sub',
   stripe_last_session_id: '',
   stripe_last_session_created_at: 0,
+  quick_test_tab_id: 0,
+  quick_test_started_at: 0,
   remember_me: true,
 
   // Compatibility toggles (hide activity techniques).
@@ -378,11 +380,61 @@ const setQuickTestUi = (state) => {
   el.textContent = next.label;
 };
 
+const getQuickTestState = async () => {
+  const {quick_test_tab_id, quick_test_started_at} = await chrome.storage.local.get({
+    quick_test_tab_id: 0,
+    quick_test_started_at: 0
+  });
+  return {
+    quick_test_tab_id: Number(quick_test_tab_id || 0),
+    quick_test_started_at: Number(quick_test_started_at || 0)
+  };
+};
+
+const setQuickTestTargetTab = async (tabId) => {
+  await chrome.storage.local.set({
+    quick_test_tab_id: Number(tabId || 0),
+    quick_test_started_at: Date.now()
+  });
+};
+
+const clearQuickTestTargetTab = async () => {
+  await chrome.storage.local.set({quick_test_tab_id: 0, quick_test_started_at: 0});
+};
+
 const getActiveTabId = async () => {
   const tabs = await chrome.tabs.query({active: true, currentWindow: true});
   const tabId = tabs?.[0]?.id;
   if (!tabId) throw new Error('No active tab found. Open a normal website tab and try again.');
   return tabId;
+};
+
+const getQuickTestCandidateTabs = async () => {
+  const {quick_test_tab_id} = await getQuickTestState();
+  let activeTabId = 0;
+  try {
+    activeTabId = await getActiveTabId();
+  } catch {}
+  const ids = [];
+  if (quick_test_tab_id) ids.push(quick_test_tab_id);
+  if (activeTabId && activeTabId !== quick_test_tab_id) ids.push(activeTabId);
+  return {ids, activeTabId};
+};
+
+const ensureQuickTestScripts = async (tabId) => {
+  try {
+    const hasPort = await chrome.scripting
+      .executeScript({
+        target: {tabId},
+        world: 'MAIN',
+        func: () => Boolean(document.getElementById('churomi-port'))
+      })
+      .then((r) => r?.[0]?.result)
+      .catch(() => false);
+    if (hasPort) return;
+    await chrome.scripting.executeScript({target: {tabId}, world: 'ISOLATED', files: ['data/function/isolated.js']});
+    await chrome.scripting.executeScript({target: {tabId}, world: 'MAIN', files: ['data/function/main.js']});
+  } catch {}
 };
 
 const quickSelfTestAction = async (tabId, action) => {
@@ -460,18 +512,38 @@ const runQuickSelfTestFlow = async () => {
   const prefs = await chrome.storage.local.get(STORAGE_DEFAULTS);
   if (!isEnabledEverywhere(prefs)) throw new Error('Enable Hide activity first, then run Test again.');
 
-  const tabId = await getActiveTabId();
-  const peek = await quickSelfTestAction(tabId, 'peek');
-  if (peek?.exists) return {mode: 'finish', summary: await quickSelfTestAction(tabId, 'finish')};
-  return {mode: 'start', summary: await quickSelfTestAction(tabId, 'start')};
+  const {ids, activeTabId} = await getQuickTestCandidateTabs();
+  if (!ids.length) throw new Error('No active tab found. Open a normal website tab and try again.');
+
+  for (const candidateId of ids) {
+    const peek = await quickSelfTestAction(candidateId, 'peek').catch(() => null);
+    if (peek?.exists) {
+      const summary = await quickSelfTestAction(candidateId, 'finish');
+      await clearQuickTestTargetTab();
+      return {mode: 'finish', summary, tabId: candidateId};
+    }
+  }
+
+  if (!activeTabId) throw new Error('No active tab found. Open a normal website tab and try again.');
+  await ensureQuickTestScripts(activeTabId);
+  const summary = await quickSelfTestAction(activeTabId, 'start');
+  await setQuickTestTargetTab(activeTabId);
+  return {mode: 'start', summary, tabId: activeTabId};
 };
 
 const syncQuickTestUiFromTab = async () => {
   if (!els.btnQuickTest) return;
   try {
-    const tabId = await getActiveTabId();
-    const peek = await quickSelfTestAction(tabId, 'peek');
-    if (peek?.exists && !peek?.done) setQuickTestUi('running');
+    const {ids} = await getQuickTestCandidateTabs();
+    let running = false;
+    for (const candidateId of ids) {
+      const peek = await quickSelfTestAction(candidateId, 'peek').catch(() => null);
+      if (peek?.exists && !peek?.done) {
+        running = true;
+        break;
+      }
+    }
+    if (running) setQuickTestUi('running');
     else if (quickTestUiState === 'running') setQuickTestUi('idle');
   } catch {
     // Ignore restricted pages (chrome:// etc).
@@ -1275,7 +1347,7 @@ els.btnQuickTest?.addEventListener('click', async () => {
     const r = await runQuickSelfTestFlow();
     if (r.mode === 'start') {
       setQuickTestUi('running');
-      setMsg(els.appMsg, 'Test started. Tap out/tap in a few times, then reopen this popup and click Test again.', '');
+      setMsg(els.appMsg, 'Test started. Switch tabs or move your mouse out, then reopen this popup and click Test again.', '');
       return;
     }
 
