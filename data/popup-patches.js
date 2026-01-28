@@ -122,7 +122,7 @@ const I18N = {
     forgot_title: 'Reset password',
     forgot_desc: 'We will email you a password reset link.',
     btn_send_reset: 'Send reset email',
-    app_title: 'Dashboard',
+    app_title: 'Dashboard (Test)',
     label_membership: 'Membership',
     label_devices_online: 'Devices signed in',
     toggle_hide_activity: 'Hide activity',
