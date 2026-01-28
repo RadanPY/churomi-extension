@@ -257,7 +257,7 @@ const registerContentScriptsIfEnabled = async () => {
             matches: ['*://*/*'],
             allFrames: true,
             matchOriginAsFallback: true,
-            js: ['data/inject/isolated.js'],
+            js: ['data/function/isolated.js'],
             runAt: 'document_start',
             world: 'ISOLATED'
           },
@@ -266,7 +266,7 @@ const registerContentScriptsIfEnabled = async () => {
             matches: ['*://*/*'],
             allFrames: true,
             matchOriginAsFallback: true,
-            js: ['data/inject/main.js'],
+            js: ['data/function/main.js'],
             runAt: 'document_start',
             world: 'MAIN'
           }
