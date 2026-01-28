@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Churomi</title>
+  <link rel="stylesheet" href="vendor/driverjs/driver.css">
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      width: 340px;
+      height: 520px;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+      font-size: 12px;
+      color: #0f172a;
+      background: radial-gradient(1200px 600px at -10% -10%, #fbcfe8 0%, transparent 55%),
+        radial-gradient(900px 500px at 110% -10%, #c7d2fe 0%, transparent 55%),
+        radial-gradient(900px 600px at 50% 110%, #bae6fd 0%, transparent 55%),
+        #ffffff;
+    }
+
+    .shell {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      gap: 8px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 9px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(10px);
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand img { width: 26px; height: 26px; border-radius: 8px; }
+    .brand .title { font-weight: 900; font-size: 14px; line-height: 1.1; }
+    .brand .subtitle { color: #475569; font-size: 12px; margin-top: 1px; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+
+    .iconbtn {
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 10px;
+      padding: 6px 8px;
+      cursor: pointer;
+      font-weight: 900;
+      color: #334155;
+      line-height: 1;
+    }
+    .iconbtn:active { transform: translateY(1px); }
+
+    .iconbtn.test-idle { }
+    .iconbtn.test-running {
+      border-color: rgba(245, 158, 11, 0.55);
+      background: rgba(245, 158, 11, 0.18);
+      color: #92400e;
+    }
+    .iconbtn.test-pass {
+      border-color: rgba(34, 197, 94, 0.55);
+      background: rgba(34, 197, 94, 0.16);
+      color: #166534;
+    }
+    .iconbtn.test-fail {
+      border-color: rgba(239, 68, 68, 0.55);
+      background: rgba(239, 68, 68, 0.14);
+      color: #991b1b;
+    }
+
+    main {
+      flex: 1;
+      position: relative;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      padding: 12px;
+      overflow: auto;
+      opacity: 0;
+      transform: translateX(14px);
+      pointer-events: none;
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+    .screen.is-active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .screen { transition: none; }
+      button.btn:active,
+      .iconbtn:active { transform: none; }
+    }
+
+    h2 {
+      margin: 0 0 6px 0;
+      font-size: 16px;
+      letter-spacing: -0.2px;
+    }
+    p { margin: 0 0 10px 0; color: #475569; }
+
+    .headrow {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .headrow > div { min-width: 0; }
+    .headrow h2 { margin: 0 0 6px 0; }
+    .headrow p { margin: 0 0 10px 0; }
+
+    label {
+      display: block;
+      font-weight: 800;
+      margin: 10px 0 6px;
+      color: #0f172a;
+    }
+    input {
+      width: 100%;
+      padding: 10px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      font-size: 13px;
+      outline: none;
+    }
+    input:focus {
+      border-color: rgba(37, 99, 235, 0.8);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+    }
+
+    select {
+      width: 100%;
+      padding: 10px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      font-size: 13px;
+      outline: none;
+      appearance: none;
+    }
+    select:focus {
+      border-color: rgba(37, 99, 235, 0.8);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+    }
+
+    .btnrow { display: flex; gap: 10px; margin-top: 12px; }
+    .btnrow.wrap { flex-wrap: wrap; }
+    button.btn {
+      flex: 1;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 900;
+      color: #fff;
+      cursor: pointer;
+      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    }
+    button.btn.secondary {
+      background: rgba(51, 65, 85, 0.92);
+    }
+    button.btn.ghost {
+      background: rgba(255, 255, 255, 0.0);
+      color: #334155;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+    }
+    button.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    button.btn:active { transform: translateY(1px); }
+
+    .linkrow { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; }
+    .linkbtn {
+      border: none;
+      background: none;
+      padding: 0;
+      cursor: pointer;
+      color: #2563eb;
+      font-weight: 800;
+      text-decoration: underline;
+    }
+
+    .listbtn {
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: rgba(255, 255, 255, 0.35);
+      color: #0f172a;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .listbtn + .listbtn { margin-top: 10px; }
+    .listbtn:hover { background: rgba(255, 255, 255, 0.65); }
+    .listbtn.primary {
+      border: none;
+      color: #fff;
+      background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+      box-shadow: 0 10px 24px rgba(236, 72, 153, 0.16);
+    }
+    .listbtn.danger {
+      border-color: rgba(220, 38, 38, 0.35);
+      color: #991b1b;
+      background: rgba(254, 226, 226, 0.55);
+    }
+    .listbtn small {
+      display: block;
+      margin-top: 3px;
+      font-weight: 800;
+      color: #475569;
+    }
+    .listbtn.primary small { color: rgba(255, 255, 255, 0.88); }
+
+    .sectionTitle {
+      font-weight: 950;
+      letter-spacing: -0.2px;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+
+    details {
+      margin-top: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.55);
+    }
+    summary { cursor: pointer; font-weight: 900; color: #334155; }
+    summary::marker { color: #64748b; }
+
+    .msg {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(255, 255, 255, 0.7);
+      color: #334155;
+      white-space: pre-line;
+      font-weight: 700;
+    }
+    .msg.ok { border-color: rgba(22, 163, 74, 0.35); color: #166534; }
+    .msg.err { border-color: rgba(220, 38, 38, 0.35); color: #991b1b; }
+
+    .hidden { display: none !important; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-weight: 900;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(255, 255, 255, 0.6);
+      color: #334155;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 999px; background: #94a3b8; }
+    .dot.ok { background: #16a34a; }
+    .dot.err { background: #dc2626; }
+
+    .card {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(255, 255, 255, 0.65);
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 900;
+      color: #0f172a;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .switch input {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+      margin: 0;
+      pointer-events: none;
+    }
+
+    .switch .slider {
+      --churomi-pink: #ec4899;
+      position: relative;
+      width: 38px;
+      height: 22px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--churomi-pink) 22%, #ffffff);
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      flex: 0 0 auto;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+      transition: background 140ms ease, border-color 140ms ease;
+    }
+
+    .switch .slider::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: #fff;
+      transform: translateY(-50%);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+      transition: transform 140ms ease;
+    }
+
+    .switch input:checked + .slider {
+      --churomi-pink: #ec4899;
+      background: var(--churomi-pink);
+      border-color: color-mix(in srgb, var(--churomi-pink) 60%, #fff);
+    }
+
+    .switch input:checked + .slider::before {
+      transform: translate(16px, -50%);
+    }
+
+    .switch input:focus-visible + .slider {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.25);
+    }
+
+    .muted { color: #64748b; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+    .miniSelect {
+      width: auto;
+      max-width: 118px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 900;
+      color: #334155;
+      background: rgba(255, 255, 255, 0.55);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .screen { transition: none; }
+      button.btn:active { transform: none; }
+      .iconbtn:active { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="../icons/churomi-48.png" alt="Churomi">
+        <div>
+          <div class="title">Churomi</div>
+          <div id="topSubtitle" class="subtitle">Ready</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="langToggle" class="iconbtn" type="button" title="Language">EN</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="screen is-active" data-screen="welcome">
+        <h2 data-i18n="welcome_title">Welcome</h2>
+        <p data-i18n="welcome_desc">Hide your page activities. Sign in to start.</p>
+
+        <div class="row">
+          <span id="backendBadge" class="badge"><span id="backendDot" class="dot"></span><span id="backendLabel">Server: checking…</span></span>
+        </div>
+
+        <div class="btnrow wrap">
+          <button id="btnGoLogin" class="btn" type="button" data-i18n="btn_login">Log in</button>
+          <button id="btnGoSignup" class="btn ghost" type="button" data-i18n="btn_signup">Create account</button>
+        </div>
+
+        <div id="welcomeMsg" class="msg"></div>
+      </section>
+
+      <section class="screen" data-screen="login">
+        <h2 data-i18n="login_title">Log in</h2>
+        <p data-i18n="login_desc">Use the same email/password you registered in Firebase Auth.</p>
+
+        <label for="loginEmail" data-i18n="label_email">Email</label>
+        <input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="username">
+
+        <label for="loginPassword" data-i18n="label_password">Password</label>
+        <input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password" data-i18n-placeholder="ph_password">
+
+        <div class="row" style="margin-top:10px">
+          <label class="switch" for="loginRemember">
+            <input id="loginRemember" type="checkbox">
+            <span class="slider" aria-hidden="true"></span>
+            <span>Remember me</span>
+          </label>
+        </div>
+
+        <div class="btnrow">
+          <button id="btnLogin" class="btn" type="button" data-i18n="btn_login">Log in</button>
+          <button id="btnBackFromLogin" class="btn ghost" type="button" data-i18n="btn_back">Back</button>
+        </div>
+
+        <div class="linkrow">
+          <button id="btnGoForgotFromLogin" class="linkbtn" type="button" data-i18n="btn_forgot_pw">Forgot password?</button>
+          <button id="btnGoSignupFromLogin" class="linkbtn" type="button" data-i18n="btn_signup">Create account</button>
+        </div>
+
+        <div id="loginMsg" class="msg"></div>
+      </section>
+
+      <section class="screen" data-screen="signup">
+        <h2 data-i18n="signup_title">Create account</h2>
+        <p data-i18n="signup_desc">We will send a verification email. You must verify before you can log in.</p>
+
+        <label for="signupEmail" data-i18n="label_email">Email</label>
+        <input id="signupEmail" type="email" placeholder="you@example.com" autocomplete="username">
+
+        <label for="signupPassword" data-i18n="label_password">Password</label>
+        <input id="signupPassword" type="password" placeholder="Password" autocomplete="new-password" data-i18n-placeholder="ph_password">
+
+        <label for="signupPassword2" data-i18n="label_password_confirm">Confirm password</label>
+        <input id="signupPassword2" type="password" placeholder="Confirm password" autocomplete="new-password" data-i18n-placeholder="ph_password_confirm">
+
+        <div class="btnrow">
+          <button id="btnSignup" class="btn" type="button" data-i18n="btn_create">Create</button>
+          <button id="btnBackFromSignup" class="btn ghost" type="button" data-i18n="btn_back">Back</button>
+        </div>
+
+        <div class="linkrow">
+          <span></span>
+          <button id="btnGoLoginFromSignup" class="linkbtn" type="button" data-i18n="btn_already_have">Already have an account?</button>
+        </div>
+
+        <div id="signupMsg" class="msg"></div>
+      </section>
+
+      <section class="screen" data-screen="forgot">
+        <h2 data-i18n="forgot_title">Reset password</h2>
+        <p data-i18n="forgot_desc">We will email you a password reset link.</p>
+
+        <label for="forgotEmail" data-i18n="label_email">Email</label>
+        <input id="forgotEmail" type="email" placeholder="you@example.com" autocomplete="username">
+
+        <div class="btnrow">
+          <button id="btnForgot" class="btn" type="button" data-i18n="btn_send_reset">Send reset email</button>
+          <button id="btnBackFromForgot" class="btn ghost" type="button" data-i18n="btn_back">Back</button>
+        </div>
+
+        <div id="forgotMsg" class="msg"></div>
+      </section>
+
+      <section class="screen" data-screen="app">
+        <div class="headrow">
+          <div>
+            <h2 data-i18n="app_title">Dashboard</h2>
+            <p id="appSubtitle" class="muted">Checking status…</p>
+          </div>
+          <button id="btnQuickTest" class="iconbtn" type="button" title="Quick self-test">Test</button>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <span id="membershipBadge" class="badge"><span id="membershipDot" class="dot"></span><span id="membershipLabel" data-i18n="label_membership">Membership</span></span>
+            <span id="membershipText" class="muted">—</span>
+          </div>
+          <div class="row">
+            <span class="muted" data-i18n="label_devices_online">Devices online</span>
+            <span id="deviceText" class="muted mono">-/3</span>
+          </div>
+          <div class="row">
+            <label id="masterEnabledWrap" class="switch" for="masterEnabled">
+              <input id="masterEnabled" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span data-i18n="toggle_hide_activity">Hide activity</span>
+            </label>
+            <span id="functionLabel" class="muted">—</span>
+          </div>
+          <div class="row">
+            <label id="stealthIconWrap" class="switch" for="stealthIcon">
+              <input id="stealthIcon" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span data-i18n="toggle_invisible_mode">Invisible mode</span>
+            </label>
+            <select id="stealthIconTheme" class="miniSelect" title="Invisible mode icon color">
+              <option value="light">Light icon</option>
+              <option value="dark">Dark icon</option>
+            </select>
+          </div>
+        </div>
+
+        <details id="compatDetails" class="card" hidden>
+          <summary>Compatibility</summary>
+          <p class="muted">Try different combinations and see what works on your target site.</p>
+
+          <div class="row">
+            <label class="switch" for="optSpoofVisibilityState">
+              <input id="optSpoofVisibilityState" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Spoof <span class="mono">visibilityState</span></span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="switch" for="optSpoofHidden">
+              <input id="optSpoofHidden" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Spoof <span class="mono">hidden</span></span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="switch" for="optSpoofWebkitVisibilityState">
+              <input id="optSpoofWebkitVisibilityState" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Spoof <span class="mono">webkitVisibilityState</span></span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="switch" for="optSpoofWebkitHidden">
+              <input id="optSpoofWebkitHidden" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Spoof <span class="mono">webkitHidden</span></span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="switch" for="optSpoofHasFocus">
+              <input id="optSpoofHasFocus" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Spoof <span class="mono">hasFocus()</span></span>
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="switch" for="optBlockVisibilityChange">
+              <input id="optBlockVisibilityChange" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Block <span class="mono">visibilitychange</span></span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="switch" for="optBlockWebkitVisibilityChange">
+              <input id="optBlockWebkitVisibilityChange" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Block <span class="mono">webkitvisibilitychange</span></span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="switch" for="optBlockMozVisibilityChange">
+              <input id="optBlockMozVisibilityChange" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Block <span class="mono">mozvisibilitychange</span></span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="switch" for="optBlockPageHide">
+              <input id="optBlockPageHide" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Block <span class="mono">pagehide</span></span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="switch" for="optBlockFocusEvents">
+              <input id="optBlockFocusEvents" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Block <span class="mono">focus/blur</span></span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="switch" for="optBlockFocusInOut">
+              <input id="optBlockFocusInOut" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Block <span class="mono">focusin/focusout</span></span>
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="switch" for="optKeepAnimation">
+              <input id="optKeepAnimation" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Keep animations when hidden</span>
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="switch" for="optBlockPointerCapture">
+              <input id="optBlockPointerCapture" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Block <span class="mono">lostpointercapture</span></span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="switch" for="optBlockMouseLeave">
+              <input id="optBlockMouseLeave" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Block <span class="mono">mouseleave</span></span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="switch" for="optBlockMouseOut">
+              <input id="optBlockMouseOut" type="checkbox">
+              <span class="slider" aria-hidden="true"></span>
+              <span>Block <span class="mono">mouseout</span></span>
+            </label>
+          </div>
+
+          <div class="btnrow">
+            <button id="btnCompatDefaults" class="btn ghost" type="button">Defaults</button>
+          </div>
+        </details>
+
+        <div class="btnrow">
+          <button id="btnMenu" class="btn ghost" type="button" data-i18n="btn_menu">Menu</button>
+          <button id="btnRefresh" class="btn secondary" type="button" data-i18n="btn_refresh">Refresh</button>
+        </div>
+
+        <div class="btnrow">
+          <button id="btnLogout" class="btn ghost" type="button" data-i18n="btn_logout">Log out</button>
+        </div>
+
+        <div id="appMsg" class="msg"></div>
+      </section>
+
+      <section class="screen" data-screen="menu">
+        <h2 data-i18n="menu_title">Menu</h2>
+        <p class="muted" data-i18n="menu_desc">Billing and account actions.</p>
+        <p class="muted"><span data-i18n="menu_contact_prefix">Want e-Transfer / WeChat Pay / Alipay? Contact</span> <span class="mono">churomi.app@gmail.com</span>.</p>
+
+        <div class="card">
+          <div class="sectionTitle">Payment</div>
+          <select id="billingPlan" aria-label="Payment plan">
+            <option value="sub" data-i18n="plan_subscription_monthly">Monthly subscription (CAD 30)</option>
+            <option value="one_time" hidden>One-time (30 days)</option>
+          </select>
+          <p class="muted" style="margin-top:8px" data-i18n="payment_note_sub">Renews monthly until canceled.</p>
+          <button id="btnUpgrade" class="listbtn primary" type="button" data-i18n="btn_subscribe">
+            Subscribe
+            <small>Secure checkout</small>
+          </button>
+          <button id="btnPayments" class="listbtn" type="button" data-i18n="btn_payments_history">
+            Payments history
+            <small>View past payments</small>
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="sectionTitle">Help</div>
+          <button id="btnGuidedTour" class="listbtn" type="button">
+            Guided tour
+            <small>Quick walkthrough</small>
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="sectionTitle">Account</div>
+          <button id="btnLegal" class="listbtn" type="button" data-i18n="btn_legal">
+            Legal
+            <small>Privacy, terms</small>
+          </button>
+          <button id="btnLogoutAll" class="listbtn danger" type="button" data-i18n="btn_logout_all">
+            Log out all devices
+            <small>Sign out everywhere</small>
+          </button>
+          <button id="btnMenuBack" class="listbtn" type="button" data-i18n="btn_back">
+            Back
+            <small>Return to dashboard</small>
+          </button>
+        </div>
+
+        <div id="menuMsg" class="msg"></div>
+      </section>
+
+      <section class="screen" data-screen="legal">
+        <h2 data-i18n="legal_title">Legal</h2>
+        <p class="muted" data-i18n="legal_desc">Privacy policy, terms, and license/EULA.</p>
+
+        <details class="card" open>
+          <summary>Privacy Policy</summary>
+          <p class="muted" style="margin-top:8px">Last updated: 2026-01-10</p>
+          <p>
+            Churomi provides a browser extension that helps keep webpages active by modifying certain page-visibility and focus signals locally in
+            your browser. This policy explains what information is processed when you use the extension and related services.
+          </p>
+
+          <h3 style="margin:14px 0 6px">Information we collect</h3>
+          <ul style="margin:0; padding-left: 18px">
+            <li><b>Account</b>: your email address (via Firebase Authentication) so you can sign in.</li>
+            <li>
+              <b>Device identifier</b>: a randomly generated device ID stored in the extension and sent to our API in the
+              <span class="mono">x-device-id</span> header to enforce device limits.
+            </li>
+            <li><b>Device metadata</b>: your user agent and timestamps (e.g., last seen) to help manage devices and security.</li>
+            <li><b>Membership & billing</b>: subscription status and limited payment metadata (handled by Stripe; we do not store your card number).</li>
+            <li><b>Support</b>: information you send to us if you contact support.</li>
+          </ul>
+
+          <h3 style="margin:14px 0 6px">What we do not collect</h3>
+          <ul style="margin:0; padding-left: 18px">
+            <li>We do not intentionally collect your browsing history, page content, or form inputs.</li>
+            <li>The “hide activity” behavior is implemented locally inside your browser.</li>
+          </ul>
+
+          <h3 style="margin:14px 0 6px">How we use information</h3>
+          <ul style="margin:0; padding-left: 18px">
+            <li>Provide sign-in, membership checks, and device limit enforcement.</li>
+            <li>Prevent fraud/abuse and secure accounts.</li>
+            <li>Operate billing (via Stripe) and show payment history.</li>
+          </ul>
+
+          <h3 style="margin:14px 0 6px">Sharing</h3>
+          <p>
+            We share limited information with service providers to operate Churomi, including Firebase (authentication), Stripe (payments), and our
+            hosting provider (API). We do not sell your personal information.
+          </p>
+
+          <h3 style="margin:14px 0 6px">Retention</h3>
+          <p>
+            Account and device records are retained as needed to provide the service and enforce device limits. You can request deletion by emailing
+            support.
+          </p>
+
+          <h3 style="margin:14px 0 6px">Contact</h3>
+          <p>Email: <a href="mailto:churomi.app@gmail.com">churomi.app@gmail.com</a></p>
+        </details>
+
+        <details class="card">
+          <summary>Terms of Service</summary>
+          <p class="muted" style="margin-top:8px">Last updated: 2026-01-10</p>
+          <p>
+            By installing or using Churomi (the “Service”), you agree to these Terms. If you do not agree, do not use the Service.
+          </p>
+
+          <h3 style="margin:14px 0 6px">Accounts</h3>
+          <ul style="margin:0; padding-left: 18px">
+            <li>You are responsible for maintaining the confidentiality of your account.</li>
+            <li>You must provide accurate account information and keep it up to date.</li>
+          </ul>
+
+          <h3 style="margin:14px 0 6px">Subscriptions & billing</h3>
+          <ul style="margin:0; padding-left: 18px">
+            <li>Paid features require an active membership.</li>
+            <li>Payments are processed by Stripe. Billing terms shown during checkout apply.</li>
+            <li>Memberships may auto-renew until canceled (if enabled).</li>
+          </ul>
+
+          <h3 style="margin:14px 0 6px">Device limits</h3>
+          <p>
+            Membership may limit how many devices can be signed in at once. Circumventing device limits or access controls is prohibited.
+          </p>
+
+          <h3 style="margin:14px 0 6px">Acceptable use</h3>
+          <ul style="margin:0; padding-left: 18px">
+            <li>Use Churomi only in accordance with applicable laws and platform policies.</li>
+            <li>Do not abuse, disrupt, or attempt to bypass security controls.</li>
+          </ul>
+
+          <h3 style="margin:14px 0 6px">Disclaimers</h3>
+          <p>
+            The Service is provided “as is” without warranties of any kind. We do not guarantee the Service will be uninterrupted or error-free.
+          </p>
+
+          <h3 style="margin:14px 0 6px">Limitation of liability</h3>
+          <p>
+            To the maximum extent permitted by law, Churomi is not liable for indirect, incidental, special, consequential, or punitive damages.
+          </p>
+
+          <h3 style="margin:14px 0 6px">Termination</h3>
+          <p>
+            We may suspend or terminate access if we reasonably believe you violated these Terms or if required for security or legal reasons.
+          </p>
+        </details>
+
+        <details class="card">
+          <summary>EULA</summary>
+          <pre style="margin-top:10px; white-space:pre-wrap">
+By installing or using Churomi, you agree to:
+- Use the extension only in accordance with applicable laws and platform policies.
+- Not reverse engineer, decompile, disassemble, or attempt to derive source code or underlying ideas.
+- Not circumvent access controls (including membership/device limits).
+
+Churomi is provided "as is" without warranties. To the maximum extent permitted by law, Churomi is not liable for
+any indirect, incidental, special, consequential, or punitive damages.
+
+If you do not agree to these terms, do not use the extension.
+          </pre>
+        </details>
+
+        <details class="card">
+          <summary>License</summary>
+          <pre style="margin-top:10px; white-space:pre-wrap">Churomi Extension License (Proprietary)
+
+Copyright (c) 2025 Churomi
+
+All rights reserved.
+
+This software and related documentation files (the "Software") are proprietary and confidential.
+You may use the Software only through an authorized copy of the Churomi browser extension and
+only for your personal or internal business use, subject to the End User License Agreement (EULA).
+
+You may not:
+- Copy, modify, distribute, sell, sublicense, or lease the Software (except as expressly permitted by law).
+- Reverse engineer, decompile, disassemble, or attempt to derive the source code or underlying ideas.
+- Remove or alter proprietary notices.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THE SOFTWARE.</pre>
+        </details>
+
+        <div class="btnrow">
+          <button id="btnLegalBack" class="btn ghost" type="button" data-i18n="btn_back">Back</button>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="payments">
+        <h2 data-i18n="payments_title">Payments</h2>
+        <p class="muted" data-i18n="payments_desc">Recent Stripe payments linked to your account.</p>
+
+        <div class="btnrow">
+          <button id="btnPaymentsBack" class="btn ghost" type="button" data-i18n="btn_back">Back</button>
+          <button id="btnPaymentsRefresh" class="btn secondary" type="button" data-i18n="btn_refresh">Refresh</button>
+        </div>
+
+        <div id="paymentsList" class="card"></div>
+        <div id="paymentsMsg" class="msg"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="../config.js"></script>
+  <script src="vendor/driverjs/driver.iife.min.js"></script>
+  <script src="popup.js"></script>
+  <script src="popup-patches.js"></script>
+</body>
+</html>

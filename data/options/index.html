@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Churomi Settings</title>
+  <link rel="stylesheet" type="text/css" href="index.css">
+</head>
+<body>
+  <div class="top">
+    <h1>Churomi Settings</h1>
+    <p class="muted">Login in popup. This page is for config.</p>
+  </div>
+
+  <details class="card">
+    <summary>Backend</summary>
+    <div class="auth-grid">
+      <label for="backendUrl">Backend URL</label>
+      <input id="backendUrl" placeholder="http://localhost:4000" />
+
+      <label for="firebaseApiKey">Firebase API key</label>
+      <input id="firebaseApiKey" placeholder="AIza..." />
+    </div>
+    <div class="auth-actions">
+      <input type="button" id="btn-save-backend" value="Save" />
+      <input type="button" id="btn-test-backend" value="Test" />
+      <span id="backendStatus" class="muted"></span>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><span id="accountSummary">Account</span></summary>
+    <div id="accountInfo" class="muted">Not logged in.</div>
+    <div class="auth-actions">
+      <input type="button" id="btn-logout" value="Logout" />
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Feature</summary>
+    <div class="row">
+      <label class="switch">
+        <input id="enabled" type="checkbox" />
+        <span>Enable on all sites</span>
+      </label>
+      <label class="switch">
+        <input id="log" type="checkbox" />
+        <span>Debug logging</span>
+      </label>
+      <span class="muted hint"><code>*://*/*</code> when enabled</span>
+    </div>
+
+    <div class="auth-actions">
+      <input type="button" id="save" value="Save" />
+      <input type="button" id="reset" value="Reset" />
+      <span id="toast"></span>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Legal</summary>
+    <div class="auth-grid">
+      <label>Privacy Policy</label>
+      <a id="legalPrivacy" class="muted" target="_blank" rel="noopener noreferrer" href="#">Open</a>
+
+      <label>Terms of Service</label>
+      <a id="legalTerms" class="muted" target="_blank" rel="noopener noreferrer" href="#">Open</a>
+
+      <label>EULA / License</label>
+      <a id="legalEula" class="muted" target="_blank" rel="noopener noreferrer" href="../legal.html">Open</a>
+    </div>
+  </details>
+
+  <script src="../../config.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>
