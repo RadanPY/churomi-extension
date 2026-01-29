@@ -25,7 +25,6 @@
       "32": "icons/churomi-32.png",
       "48": "icons/churomi-48.png"
    },
-   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAseB7ntK40LUvkrxzrD8QDWVe5qJeH0AyGiw8gXKaqCWI9suL9djmbY1PjqCWgP12+lMR7DXi24eKJ6zHnnkal+ZHuy8UL+mk75rZYXPfFnY2Y840RNxKWFzum4Xnb2npJkjg3uYoZGKqO7zzq6Z+xrfdUbB+5XP8sM8P/CHCjyXpuvMKWpgl5zhx/ih/6EoYi6qMAYUW50b0tKpquUajsgSa31m0dv8nkYz+VnZ/UROzN7gPxBkg1XvWwg0D81CJQ7DmSHNWP4TlSsXlYxKQ/hGD6FvIuvQeoRuQeIN6rb12+qw6OTnWzKOZ/6vFHUvH7yWs3K+EhJbRFQSGvOm/QQIDAQAB",
    "manifest_version": 3,
    "minimum_chrome_version": "114",
    "name": "Churomi - Canvas & Moodle Quiz Assistant",
@@ -34,6 +33,5 @@
       "page": "data/options/index.html"
    },
    "permissions": [ "storage", "scripting", "alarms" ],
-   "update_url": "https://clients2.google.com/service/update2/crx",
-   "version": "0.1.15"
+   "version": "0.1.15.1"
 }
