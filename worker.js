@@ -52,6 +52,25 @@ const ICONS = {
 const BACKEND_HEALTH_ALARM = 'churomi-backend-health';
 const MEMBERSHIP_ALARM = 'churomi-membership';
 
+const FREE_MODE = true;
+const FREE_MEMBERSHIP = Object.freeze({
+  status: 'active',
+  plan: 'free',
+  active: true,
+  valid_until: 0,
+  free: true
+});
+const FREE_DEVICE_USAGE = Object.freeze({active: 1, max: null, unlimited: true});
+
+const buildFreeAccessState = () => ({
+  auth: null,
+  authEmail: '',
+  membership: {...FREE_MEMBERSHIP},
+  device_usage: {...FREE_DEVICE_USAGE},
+  membership_checked_at: Date.now(),
+  last_membership_error: ''
+});
+
 const normalizeBackendUrl = (url) => String(url || '').trim().replace(/\/$/, '');
 
 const withLog = async (fn) => {
@@ -119,6 +138,7 @@ const getJwtExpiryMs = (token) => {
 };
 
 const isAuthValid = (authValue) => {
+  if (FREE_MODE) return true;
   const auth = parseAuthValue(authValue);
   if (!auth || typeof auth !== 'object') return false;
   const idToken = getAuthIdToken(auth);
@@ -243,8 +263,11 @@ const registerContentScriptsIfEnabled = async () => {
   const prefs = await chrome.storage.local.get(STORAGE_DEFAULTS);
   if (!isEnabledEverywhere(prefs)) return;
 
-  if (!isAuthValid(prefs.auth)) return disableEverything({reason: 'not_signed_in'}).catch(() => {});
-  if (!isMembershipActive(prefs.membership)) return disableEverything({reason: 'membership_inactive'}).catch(() => {});
+  if (FREE_MODE && !isMembershipActive(prefs.membership)) {
+    await chrome.storage.local.set(buildFreeAccessState());
+  }
+  if (!FREE_MODE && !isAuthValid(prefs.auth)) return disableEverything({reason: 'not_signed_in'}).catch(() => {});
+  if (!FREE_MODE && !isMembershipActive(prefs.membership)) return disableEverything({reason: 'membership_inactive'}).catch(() => {});
 
   await unregisterContentScripts();
   try {
@@ -316,6 +339,10 @@ const checkServerHealth = async () => {
 };
 
 const syncMembership = async () => {
+  if (FREE_MODE) {
+    await chrome.storage.local.set(buildFreeAccessState());
+    return;
+  }
   const prefs = await chrome.storage.local.get(STORAGE_DEFAULTS);
   if (!isAuthValid(prefs.auth)) {
     await chrome.storage.local.set({
@@ -376,7 +403,8 @@ const syncMembership = async () => {
 
 const initStorageDefaults = async () => {
   const prefs = await chrome.storage.local.get(STORAGE_DEFAULTS);
-  await chrome.storage.local.set({...STORAGE_DEFAULTS, ...prefs});
+  const freeState = FREE_MODE ? buildFreeAccessState() : {};
+  await chrome.storage.local.set({...STORAGE_DEFAULTS, ...prefs, ...freeState});
 };
 
 const ensureAlarms = async () => {

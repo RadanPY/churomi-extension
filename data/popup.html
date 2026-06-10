@@ -388,23 +388,23 @@
     <main>
       <section class="screen is-active" data-screen="welcome">
         <h2 data-i18n="welcome_title">Welcome</h2>
-        <p data-i18n="welcome_desc">Hide your page activities. Sign in to start.</p>
+        <p data-i18n="welcome_desc">Hide your page activities. Free to use - no sign in required.</p>
 
         <div class="row">
           <span id="backendBadge" class="badge"><span id="backendDot" class="dot"></span><span id="backendLabel">Server: checking…</span></span>
         </div>
 
         <div class="btnrow wrap">
-          <button id="btnGoLogin" class="btn" type="button" data-i18n="btn_login">Log in</button>
-          <button id="btnGoSignup" class="btn ghost" type="button" data-i18n="btn_signup">Create account</button>
+          <button id="btnGoLogin" hidden class="btn" type="button" data-i18n="btn_login">Free access</button>
+          <button id="btnGoSignup" hidden class="btn ghost" type="button" data-i18n="btn_signup">Free access</button>
         </div>
 
         <div id="welcomeMsg" class="msg"></div>
       </section>
 
-      <section class="screen" data-screen="login">
-        <h2 data-i18n="login_title">Log in</h2>
-        <p data-i18n="login_desc">Use the same email/password you registered in Firebase Auth.</p>
+      <section class="screen" data-screen="login" hidden>
+        <h2 data-i18n="login_title">Free access</h2>
+        <p data-i18n="login_desc">Sign in has been removed. Churomi is free to use.</p>
 
         <label for="loginEmail" data-i18n="label_email">Email</label>
         <input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="username">
@@ -421,21 +421,21 @@
         </div>
 
         <div class="btnrow">
-          <button id="btnLogin" class="btn" type="button" data-i18n="btn_login">Log in</button>
+          <button id="btnLogin" class="btn" type="button" data-i18n="btn_login">Free access</button>
           <button id="btnBackFromLogin" class="btn ghost" type="button" data-i18n="btn_back">Back</button>
         </div>
 
         <div class="linkrow">
           <button id="btnGoForgotFromLogin" class="linkbtn" type="button" data-i18n="btn_forgot_pw">Forgot password?</button>
-          <button id="btnGoSignupFromLogin" class="linkbtn" type="button" data-i18n="btn_signup">Create account</button>
+          <button id="btnGoSignupFromLogin" class="linkbtn" type="button" data-i18n="btn_signup">Free access</button>
         </div>
 
         <div id="loginMsg" class="msg"></div>
       </section>
 
-      <section class="screen" data-screen="signup">
-        <h2 data-i18n="signup_title">Create account</h2>
-        <p data-i18n="signup_desc">We will send a verification email. You must verify before you can log in.</p>
+      <section class="screen" data-screen="signup" hidden>
+        <h2 data-i18n="signup_title">Free access</h2>
+        <p data-i18n="signup_desc">Account creation has been removed. Churomi is free to use.</p>
 
         <label for="signupEmail" data-i18n="label_email">Email</label>
         <input id="signupEmail" type="email" placeholder="you@example.com" autocomplete="username">
@@ -459,9 +459,9 @@
         <div id="signupMsg" class="msg"></div>
       </section>
 
-      <section class="screen" data-screen="forgot">
-        <h2 data-i18n="forgot_title">Reset password</h2>
-        <p data-i18n="forgot_desc">We will email you a password reset link.</p>
+      <section class="screen" data-screen="forgot" hidden>
+        <h2 data-i18n="forgot_title">Free access</h2>
+        <p data-i18n="forgot_desc">Password reset is not needed because sign in has been removed.</p>
 
         <label for="forgotEmail" data-i18n="label_email">Email</label>
         <input id="forgotEmail" type="email" placeholder="you@example.com" autocomplete="username">
@@ -485,7 +485,7 @@
 
         <div class="card">
           <div class="row">
-            <span id="membershipBadge" class="badge"><span id="membershipDot" class="dot"></span><span id="membershipLabel" data-i18n="label_membership">Membership</span></span>
+            <span id="membershipBadge" class="badge"><span id="membershipDot" class="dot"></span><span id="membershipLabel" data-i18n="label_membership">Access</span></span>
             <span id="membershipText" class="muted">—</span>
           </div>
           <div class="row">
@@ -637,7 +637,7 @@
         </div>
 
         <div class="btnrow">
-          <button id="btnLogout" class="btn ghost" type="button" data-i18n="btn_logout">Log out</button>
+          <button id="btnLogout" hidden class="btn ghost" type="button" data-i18n="btn_logout">Log out</button>
         </div>
 
         <div id="appMsg" class="msg"></div>
@@ -645,23 +645,23 @@
 
       <section class="screen" data-screen="menu">
         <h2 data-i18n="menu_title">Menu</h2>
-        <p class="muted" data-i18n="menu_desc">Billing and account actions.</p>
-        <p class="muted"><span data-i18n="menu_contact_prefix">Want e-Transfer / WeChat Pay / Alipay? Contact</span> <span class="mono">churomi.app@gmail.com</span>.</p>
+        <p class="muted" data-i18n="menu_desc">Free access. No account or payment required.</p>
+        <p class="muted"><span data-i18n="menu_contact_prefix">Need help? Contact</span> <span class="mono">churomi.app@gmail.com</span>.</p>
 
-        <div class="card">
-          <div class="sectionTitle">Payment</div>
+        <div class="card" hidden>
+          <div class="sectionTitle">Free access</div>
           <select id="billingPlan" aria-label="Payment plan">
-            <option value="sub" data-i18n="plan_subscription_monthly">Monthly subscription (CAD 30)</option>
+            <option value="sub" data-i18n="plan_subscription_monthly">Free access</option>
             <option value="one_time" hidden>One-time (30 days)</option>
           </select>
-          <p class="muted" style="margin-top:8px" data-i18n="payment_note_sub">Renews monthly until canceled.</p>
-          <button id="btnUpgrade" class="listbtn primary" type="button" data-i18n="btn_subscribe">
-            Subscribe
-            <small>Secure checkout</small>
+          <p class="muted" style="margin-top:8px" data-i18n="payment_note_sub">No payment or subscription required.</p>
+          <button id="btnUpgrade" hidden class="listbtn primary" type="button" data-i18n="btn_subscribe">
+            Free
+            <small>No checkout required</small>
           </button>
-          <button id="btnPayments" class="listbtn" type="button" data-i18n="btn_payments_history">
-            Payments history
-            <small>View past payments</small>
+          <button id="btnPayments" hidden class="listbtn" type="button" data-i18n="btn_payments_history">
+            Payments removed
+            <small>No payment history</small>
           </button>
         </div>
 
@@ -679,7 +679,7 @@
             Legal
             <small>Privacy, terms</small>
           </button>
-          <button id="btnLogoutAll" class="listbtn danger" type="button" data-i18n="btn_logout_all">
+          <button id="btnLogoutAll" hidden class="listbtn danger" type="button" data-i18n="btn_logout_all">
             Log out all devices
             <small>Sign out everywhere</small>
           </button>
@@ -706,13 +706,13 @@
 
           <h3 style="margin:14px 0 6px">Information we collect</h3>
           <ul style="margin:0; padding-left: 18px">
-            <li><b>Account</b>: your email address (via Firebase Authentication) so you can sign in.</li>
+            <li><b>Account</b>: sign-in has been removed; no account is required for normal use.</li>
             <li>
-              <b>Device identifier</b>: a randomly generated device ID stored in the extension and sent to our API in the
-              <span class="mono">x-device-id</span> header to enforce device limits.
+              <b>Device identifier</b>: a randomly generated device ID stored in the extension and used locally and may be sent to our API in the
+              <span class="mono">x-device-id</span> header for settings continuity.
             </li>
             <li><b>Device metadata</b>: your user agent and timestamps (e.g., last seen) to help manage devices and security.</li>
-            <li><b>Membership & billing</b>: subscription status and limited payment metadata (handled by Stripe; we do not store your card number).</li>
+            <li><b>Access</b>: Churomi runs in free mode without collecting payment details.</li>
             <li><b>Support</b>: information you send to us if you contact support.</li>
           </ul>
 
@@ -724,20 +724,20 @@
 
           <h3 style="margin:14px 0 6px">How we use information</h3>
           <ul style="margin:0; padding-left: 18px">
-            <li>Provide sign-in, membership checks, and device limit enforcement.</li>
+            <li>Provide free access without sign-in or membership checks.</li>
             <li>Prevent fraud/abuse and secure accounts.</li>
-            <li>Operate billing (via Stripe) and show payment history.</li>
+            <li>Provide free access without checkout or payment history.</li>
           </ul>
 
           <h3 style="margin:14px 0 6px">Sharing</h3>
           <p>
-            We share limited information with service providers to operate Churomi, including Firebase (authentication), Stripe (payments), and our
+            We share limited information with service providers to operate Churomi, including our
             hosting provider (API). We do not sell your personal information.
           </p>
 
           <h3 style="margin:14px 0 6px">Retention</h3>
           <p>
-            Account and device records are retained as needed to provide the service and enforce device limits. You can request deletion by emailing
+            Support messages and operational logs may be retained as needed for security and reliability. You can request deletion by emailing
             support.
           </p>
 
@@ -758,16 +758,16 @@
             <li>You must provide accurate account information and keep it up to date.</li>
           </ul>
 
-          <h3 style="margin:14px 0 6px">Subscriptions & billing</h3>
+          <h3 style="margin:14px 0 6px">Free access</h3>
           <ul style="margin:0; padding-left: 18px">
-            <li>Paid features require an active membership.</li>
-            <li>Payments are processed by Stripe. Billing terms shown during checkout apply.</li>
-            <li>Memberships may auto-renew until canceled (if enabled).</li>
+            <li>Churomi is free to use; no paid membership is required.</li>
+            <li>Payments have been removed; there is no checkout or subscription.</li>
+            <li>There are no subscriptions or auto-renewals.</li>
           </ul>
 
           <h3 style="margin:14px 0 6px">Device limits</h3>
           <p>
-            Membership may limit how many devices can be signed in at once. Circumventing device limits or access controls is prohibited.
+            No sign-in or payment is required to use Churomi.
           </p>
 
           <h3 style="margin:14px 0 6px">Acceptable use</h3>
@@ -798,7 +798,7 @@
 By installing or using Churomi, you agree to:
 - Use the extension only in accordance with applicable laws and platform policies.
 - Not reverse engineer, decompile, disassemble, or attempt to derive source code or underlying ideas.
-- Not circumvent access controls (including membership/device limits).
+- No sign in, membership, or payment is required.
 
 Churomi is provided "as is" without warranties. To the maximum extent permitted by law, Churomi is not liable for
 any indirect, incidental, special, consequential, or punitive damages.
@@ -836,9 +836,9 @@ OR OTHER DEALINGS IN THE SOFTWARE.</pre>
         </div>
       </section>
 
-      <section class="screen" data-screen="payments">
+      <section class="screen" data-screen="payments" hidden>
         <h2 data-i18n="payments_title">Payments</h2>
-        <p class="muted" data-i18n="payments_desc">Recent Stripe payments linked to your account.</p>
+        <p class="muted" data-i18n="payments_desc">Payments are disabled because Churomi is free to use.</p>
 
         <div class="btnrow">
           <button id="btnPaymentsBack" class="btn ghost" type="button" data-i18n="btn_back">Back</button>

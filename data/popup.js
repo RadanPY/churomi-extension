@@ -136,6 +136,54 @@ const paymentsEls = {
 
 let currentPrefs = {...STORAGE_DEFAULTS};
 
+const FREE_MODE = true;
+const FREE_MEMBERSHIP = Object.freeze({
+  status: 'active',
+  plan: 'free',
+  active: true,
+  valid_until: 0,
+  free: true
+});
+const FREE_DEVICE_USAGE = Object.freeze({active: 1, max: null, unlimited: true});
+
+const buildFreeAccessState = () => ({
+  auth: null,
+  authEmail: '',
+  membership: {...FREE_MEMBERSHIP},
+  device_usage: {...FREE_DEVICE_USAGE},
+  membership_checked_at: Date.now(),
+  last_membership_error: '',
+  stripe_last_session_id: '',
+  stripe_last_session_created_at: 0
+});
+
+const persistFreeAccess = async () => {
+  const state = buildFreeAccessState();
+  await chrome.storage.local.set(state);
+  return {ok: true, free: true, membership: state.membership, device_usage: state.device_usage};
+};
+
+const applyFreeModeUi = () => {
+  if (!FREE_MODE) return;
+  for (const el of [
+    els.btnGoLogin,
+    els.btnGoSignup,
+    els.btnLogout,
+    els.btnUpgrade,
+    els.btnPayments,
+    els.btnLogoutAll
+  ]) {
+    if (!el) continue;
+    el.hidden = true;
+    el.setAttribute('aria-hidden', 'true');
+  }
+  const billingCard = els.billingPlan?.closest?.('.card');
+  if (billingCard) billingCard.hidden = true;
+  if (els.topSubtitle) els.topSubtitle.textContent = 'Free mode';
+};
+
+applyFreeModeUi();
+
 const QUICK_TEST_UI = {
   idle: {className: 'test-idle', label: 'Test'},
   running: {className: 'test-running', label: 'Testing'},
@@ -529,14 +577,14 @@ const startGuidedTour = async ({markSeen = true} = {}) => {
       element: '#btnMenu',
       popover: {
         title: 'Menu',
-        description: 'Billing and account actions live here.'
+        description: 'Free access settings live here.'
       }
     },
     {
       element: '#btnRefresh',
       popover: {
         title: 'Refresh',
-        description: 'Re-sync membership and device status if something looks wrong.'
+        description: 'Refresh free access status if something looks wrong.'
       }
     },
     {
@@ -609,6 +657,7 @@ const getJwtExpiryMs = (token) => {
 };
 
 const isAuthValid = (authValue) => {
+  if (FREE_MODE) return true;
   const auth = parseAuthValue(authValue);
   if (!auth || typeof auth !== 'object') return false;
   const idToken = getAuthIdToken(auth);
@@ -742,10 +791,10 @@ const setMembershipUI = (membership) => {
     return;
   }
 
-  if (!validUntil) return (els.membershipText.textContent = active ? 'Active.' : 'Inactive.');
+  if (!validUntil) return (els.membershipText.textContent = FREE_MODE ? 'Free unlimited' : (active ? 'Active.' : 'Inactive.'));
 
   const untilLocal = new Date(validUntil).toLocaleString();
-  els.membershipText.textContent = active ? `Active until ${untilLocal}` : `Inactive (expired ${untilLocal})`;
+  els.membershipText.textContent = FREE_MODE ? 'Free unlimited' : (active ? `Active until ${untilLocal}` : `Inactive (expired ${untilLocal})`);
 };
 
 const setDeviceUI = (deviceUsage, membership) => {
@@ -774,6 +823,10 @@ const setDeviceUI = (deviceUsage, membership) => {
   }
 
   const usage = raw && typeof raw === 'object' ? raw : null;
+  if (usage?.unlimited === true) {
+    els.deviceText.textContent = 'Unlimited';
+    return;
+  }
   let used = NaN;
   let limit = NaN;
 
@@ -849,6 +902,7 @@ const setDeviceUI = (deviceUsage, membership) => {
 };
 
 const syncMembership = async () => {
+  if (FREE_MODE) return persistFreeAccess();
   const prefs = await chrome.storage.local.get(STORAGE_DEFAULTS);
   currentPrefs = prefs;
   if (!isAuthValid(prefs.auth)) {
@@ -900,6 +954,10 @@ const syncMembership = async () => {
 };
 
 const confirmCheckoutIfNeeded = async () => {
+  if (FREE_MODE) {
+    await chrome.storage.local.set({stripe_last_session_id: '', stripe_last_session_created_at: 0});
+    return false;
+  }
   const prefs = await chrome.storage.local.get(STORAGE_DEFAULTS);
   currentPrefs = prefs;
   if (!isAuthValid(prefs.auth)) return false;
@@ -933,7 +991,28 @@ const confirmCheckoutIfNeeded = async () => {
   return Boolean(data.applied);
 };
 
-const logout = async (message = 'Logged out.') => {
+const logout = async (message = 'Settings reset.') => {
+  if (FREE_MODE) {
+    await chrome.storage.local.set({
+      ...buildFreeAccessState(),
+      auth: null,
+      authEmail: '',
+      enabled: false,
+      hosts: [],
+      stealth_icon: false,
+      auto_renew: false
+    });
+    try {
+      chrome.runtime.sendMessage({method: 'sync'});
+    } catch {}
+    if (els.masterEnabled) els.masterEnabled.checked = false;
+    if (els.stealthIcon) els.stealthIcon.checked = false;
+    applyFreeModeUi();
+    setScreen('app', {message, messageType: 'ok'});
+    checkBackendHealth().catch(() => {});
+    return;
+  }
+
   await chrome.storage.local.set({
     auth: null,
     membership: null,
@@ -956,6 +1035,10 @@ const logout = async (message = 'Logged out.') => {
 };
 
 const logoutAllDevices = async () => {
+  if (FREE_MODE) {
+    setMsg(els.menuMsg, 'No account is signed in. Churomi is free on this device.', 'ok');
+    return;
+  }
   setMsg(els.menuMsg, '', '');
   const prefs = await chrome.storage.local.get(STORAGE_DEFAULTS);
   currentPrefs = prefs;
@@ -983,17 +1066,21 @@ const logoutAllDevices = async () => {
 };
 
 const openCheckout = async ({autoRenew = false} = {}) => {
+  if (FREE_MODE) {
+    setMsg(els.menuMsg, 'Payment has been removed. Churomi is free to use.', 'ok');
+    return;
+  }
   setMsg(els.menuMsg, '', '');
   const prefs = await chrome.storage.local.get(STORAGE_DEFAULTS);
   currentPrefs = prefs;
-  if (!isAuthValid(prefs.auth)) return setScreen('welcome', {message: 'Sign in to continue.', messageType: ''});
+  if (!isAuthValid(prefs.auth)) return setScreen('app', {message: 'Churomi is free to use.', messageType: 'ok'});
 
   const base = normalizeBackendUrl(prefs.backendUrl);
   const token = getAuthIdToken(parseAuthValue(prefs.auth));
   const deviceId = await ensureDeviceId();
 
   setBusy([els.btnUpgrade, els.btnMenuBack, els.btnLogoutAll, els.btnPayments, els.btnLegal], true);
-  setMsg(els.menuMsg, 'Opening checkout...', '');
+  setMsg(els.menuMsg, 'Churomi is free to use.', 'ok');
   try {
     const res = await fetch(`${base}/api/billing/checkout`, {
       method: 'POST',
@@ -1009,7 +1096,7 @@ const openCheckout = async ({autoRenew = false} = {}) => {
       });
     }
     await chrome.tabs.create({url: String(data.url)}).catch(() => window.open(String(data.url), '_blank'));
-    setMsg(els.menuMsg, 'Checkout opened. After payment, come back and click Refresh.', 'ok');
+    setMsg(els.menuMsg, 'Churomi is free to use.', 'ok');
   } catch (e) {
     setMsg(els.menuMsg, e.message || 'Failed to start checkout', 'err');
   } finally {
@@ -1019,12 +1106,17 @@ const openCheckout = async ({autoRenew = false} = {}) => {
 
 const loadPaymentHistory = async () => {
   if (!paymentsEls.list) return;
+  if (FREE_MODE) {
+    paymentsEls.list.innerHTML = '<div class="muted">Payment history is disabled because Churomi is free to use.</div>';
+    setMsg(paymentsEls.msg, '', '');
+    return;
+  }
   setMsg(paymentsEls.msg, '', '');
   paymentsEls.list.innerHTML = '<div class="muted">Loading...</div>';
 
   const prefs = await chrome.storage.local.get(STORAGE_DEFAULTS);
   currentPrefs = prefs;
-  if (!isAuthValid(prefs.auth)) return setScreen('welcome', {message: 'Sign in to view payment history.', messageType: ''});
+  if (!isAuthValid(prefs.auth)) return setScreen('app', {message: 'Payment history is disabled because Churomi is free to use.', messageType: 'ok'});
 
   const base = normalizeBackendUrl(prefs.backendUrl);
   const token = getAuthIdToken(parseAuthValue(prefs.auth));
@@ -1056,7 +1148,7 @@ const loadPaymentHistory = async () => {
               <div class="muted mono" style="font-size:11px;">${id}</div>
             </div>
             <div style="text-align:right;">
-              <div style="font-weight:900;">${status}${days ? ` · ${days}` : ''}</div>
+              <div style="font-weight:900;">${status}${days ? ` - ${days}` : ''}</div>
               <div class="muted" style="font-size:11px;">${when}</div>
             </div>
           </div>
@@ -1090,11 +1182,11 @@ const refreshApp = async ({forceMembershipSync = false} = {}) => {
     }
     if (els.topSubtitle) els.topSubtitle.textContent = 'Ready';
     if (els.appSubtitle) els.appSubtitle.textContent = '';
-    setScreen('welcome', {message: 'Sign in to start.', messageType: ''});
+    setScreen('app', {message: 'Churomi is free to use.', messageType: 'ok'});
     return checkBackendHealth().catch(() => {});
   }
 
-  if (els.topSubtitle) els.topSubtitle.textContent = 'Signed in';
+  if (els.topSubtitle) els.topSubtitle.textContent = FREE_MODE ? 'Free mode' : 'Signed in';
   setScreen('app');
 
   const now = Date.now();
@@ -1125,7 +1217,7 @@ const refreshApp = async ({forceMembershipSync = false} = {}) => {
   const membershipActive = signedIn ? isMembershipActive(membership) : false;
 
   if (els.appSubtitle) {
-    els.appSubtitle.textContent = membershipActive ? 'Active' : 'Membership inactive';
+    els.appSubtitle.textContent = FREE_MODE ? 'Free unlimited' : (membershipActive ? 'Active' : 'Membership inactive');
   }
   if (els.masterEnabled) els.masterEnabled.disabled = !membershipActive;
   if (els.functionLabel) {
@@ -1144,20 +1236,25 @@ const refreshApp = async ({forceMembershipSync = false} = {}) => {
     const {last_membership_error} = await chrome.storage.local.get({last_membership_error: ''});
     const errText = String(last_membership_error || '').trim();
     if (!membership && errText) setMsg(els.appMsg, errText, 'err');
-    else setMsg(els.appMsg, 'Membership inactive. Subscribe to enable Hide activity.', 'err');
+    else setMsg(els.appMsg, FREE_MODE ? '' : 'Access inactive.', FREE_MODE ? '' : 'err');
   } else {
     setMsg(els.appMsg, '', '');
   }
 };
 
 const doLogin = async () => {
+  if (FREE_MODE) {
+    await persistFreeAccess();
+    setScreen('app', {message: 'Churomi is free to use. No login is required.', messageType: 'ok'});
+    return;
+  }
   currentPrefs = await chrome.storage.local.get(STORAGE_DEFAULTS);
   const apiKey = getApiKey();
   const email = (els.loginEmail?.value || '').trim();
   const password = els.loginPassword?.value || '';
   const rememberMe = els.loginRemember ? Boolean(els.loginRemember.checked) : true;
 
-  if (!apiKey) return setMsg(els.loginMsg, 'Missing Firebase API key. Set it in Options.', 'err');
+  if (!apiKey) return setMsg(els.loginMsg, 'Account sign-in has been removed.', 'err');
   if (!email || !password) return setMsg(els.loginMsg, 'Enter email and password.', 'err');
 
   setBusy([els.btnLogin, els.btnBackFromLogin, els.btnGoForgotFromLogin, els.btnGoSignupFromLogin], true);
@@ -1197,13 +1294,18 @@ const doLogin = async () => {
 };
 
 const doSignup = async () => {
+  if (FREE_MODE) {
+    await persistFreeAccess();
+    setScreen('app', {message: 'Churomi is free to use. Account creation is disabled.', messageType: 'ok'});
+    return;
+  }
   currentPrefs = await chrome.storage.local.get(STORAGE_DEFAULTS);
   const apiKey = getApiKey();
   const email = (els.signupEmail?.value || '').trim();
   const password = els.signupPassword?.value || '';
   const password2 = els.signupPassword2?.value || '';
 
-  if (!apiKey) return setMsg(els.signupMsg, 'Missing Firebase API key. Set it in Options.', 'err');
+  if (!apiKey) return setMsg(els.signupMsg, 'Account sign-in has been removed.', 'err');
   if (!email || !password) return setMsg(els.signupMsg, 'Enter email and password.', 'err');
   if (password !== password2) return setMsg(els.signupMsg, 'Passwords do not match.', 'err');
 
@@ -1232,11 +1334,16 @@ const doSignup = async () => {
 };
 
 const doForgot = async () => {
+  if (FREE_MODE) {
+    await persistFreeAccess();
+    setScreen('app', {message: 'Churomi is free to use. Password reset is not needed.', messageType: 'ok'});
+    return;
+  }
   currentPrefs = await chrome.storage.local.get(STORAGE_DEFAULTS);
   const apiKey = getApiKey();
   const email = (els.forgotEmail?.value || '').trim();
 
-  if (!apiKey) return setMsg(els.forgotMsg, 'Missing Firebase API key. Set it in Options.', 'err');
+  if (!apiKey) return setMsg(els.forgotMsg, 'Account sign-in has been removed.', 'err');
   if (!email) return setMsg(els.forgotMsg, 'Enter your email.', 'err');
 
   setBusy([els.btnForgot, els.btnBackFromForgot], true);
@@ -1251,14 +1358,16 @@ const doForgot = async () => {
   }
 };
 
-els.btnGoLogin?.addEventListener('click', () => setScreen('login'));
-els.btnGoSignup?.addEventListener('click', () => setScreen('signup'));
-els.btnBackFromLogin?.addEventListener('click', () => setScreen('welcome'));
-els.btnGoForgotFromLogin?.addEventListener('click', () => setScreen('forgot'));
-els.btnGoSignupFromLogin?.addEventListener('click', () => setScreen('signup'));
-els.btnBackFromSignup?.addEventListener('click', () => setScreen('welcome'));
-els.btnGoLoginFromSignup?.addEventListener('click', () => setScreen('login'));
-els.btnBackFromForgot?.addEventListener('click', () => setScreen('login'));
+const showFreeApp = () => setScreen('app', {message: 'Churomi is free to use.', messageType: 'ok'});
+
+els.btnGoLogin?.addEventListener('click', () => (FREE_MODE ? showFreeApp() : setScreen('login')));
+els.btnGoSignup?.addEventListener('click', () => (FREE_MODE ? showFreeApp() : setScreen('signup')));
+els.btnBackFromLogin?.addEventListener('click', () => (FREE_MODE ? showFreeApp() : setScreen('welcome')));
+els.btnGoForgotFromLogin?.addEventListener('click', () => (FREE_MODE ? showFreeApp() : setScreen('forgot')));
+els.btnGoSignupFromLogin?.addEventListener('click', () => (FREE_MODE ? showFreeApp() : setScreen('signup')));
+els.btnBackFromSignup?.addEventListener('click', () => (FREE_MODE ? showFreeApp() : setScreen('welcome')));
+els.btnGoLoginFromSignup?.addEventListener('click', () => (FREE_MODE ? showFreeApp() : setScreen('login')));
+els.btnBackFromForgot?.addEventListener('click', () => (FREE_MODE ? showFreeApp() : setScreen('login')));
 
 els.btnLogin?.addEventListener('click', (e) => {
   e?.preventDefault?.();
@@ -1349,7 +1458,7 @@ els.masterEnabled?.addEventListener('change', async () => {
     updateStealthVisibility(false);
     if (prefs.stealth_icon) await setStealthIcon(false);
     await chrome.storage.local.set({enabled: false, hosts: []});
-    setScreen('welcome', {message: 'Sign in to use Hide activity.', messageType: ''});
+    setScreen('app', {message: 'Churomi is free to use.', messageType: 'ok'});
     return;
   }
 

@@ -12,13 +12,14 @@
       "service_worker": "worker.js"
    },
    "commands": {
-      "_execute_action": {
-      }
+      "_execute_action": {}
    },
    "default_locale": "en",
    "description": "__MSG_description__",
    "homepage_url": "https://churomi.com",
-   "host_permissions": [ "*://*/*" ],
+   "host_permissions": [
+      "*://*/*"
+   ],
    "icons": {
       "128": "icons/churomi-128.png",
       "16": "icons/churomi-16.png",
@@ -33,7 +34,11 @@
       "open_in_tab": true,
       "page": "data/options/index.html"
    },
-   "permissions": [ "storage", "scripting", "alarms" ],
+   "permissions": [
+      "storage",
+      "scripting",
+      "alarms"
+   ],
    "update_url": "https://clients2.google.com/service/update2/crx",
-   "version": "0.1.15"
+   "version": "0.1.16"
 }

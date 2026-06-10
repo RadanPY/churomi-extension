@@ -9,17 +9,14 @@
 <body>
   <div class="top">
     <h1>Churomi Settings</h1>
-    <p class="muted">Login in popup. This page is for config.</p>
+    <p class="muted">Free mode is enabled. No sign in, membership checkout, or payment is required.</p>
   </div>
 
-  <details class="card">
+  <details class="card" open>
     <summary>Backend</summary>
     <div class="auth-grid">
       <label for="backendUrl">Backend URL</label>
-      <input id="backendUrl" placeholder="http://localhost:4000" />
-
-      <label for="firebaseApiKey">Firebase API key</label>
-      <input id="firebaseApiKey" placeholder="AIza..." />
+      <input id="backendUrl" placeholder="https://api.churomi.com" />
     </div>
     <div class="auth-actions">
       <input type="button" id="btn-save-backend" value="Save" />
@@ -28,12 +25,9 @@
     </div>
   </details>
 
-  <details class="card">
-    <summary><span id="accountSummary">Account</span></summary>
-    <div id="accountInfo" class="muted">Not logged in.</div>
-    <div class="auth-actions">
-      <input type="button" id="btn-logout" value="Logout" />
-    </div>
+  <details class="card" open>
+    <summary><span id="accountSummary">Access</span></summary>
+    <div id="accountInfo" class="muted">Free access is active. No account is required.</div>
   </details>
 
   <details class="card">

@@ -1,5 +1,7 @@
 // Small post-load patch layer to add UX fixes without rewriting popup.js.
 
+const FREE_MODE = true;
+
 const parseAuthValue = (authValue) => {
   if (!authValue) return null;
   if (typeof authValue === 'string') {
@@ -45,6 +47,7 @@ const getJwtExpiryMs = (token) => {
 };
 
 const isAuthValid = (authValue) => {
+  if (FREE_MODE) return true;
   const auth = parseAuthValue(authValue);
   if (!auth || typeof auth !== 'object') return false;
 
@@ -103,46 +106,46 @@ const syncToggleUi = async () => {
 const I18N = {
   en: {
     welcome_title: 'Welcome',
-    welcome_desc: 'Hide your page activities. Sign in to start.',
-    btn_login: 'Log in',
-    btn_signup: 'Create account',
-    login_title: 'Log in',
-    login_desc: 'Use the same email/password you registered in Firebase Auth.',
+    welcome_desc: 'Hide your page activities. Free to use - no sign in required.',
+    btn_login: 'Free access',
+    btn_signup: 'Free access',
+    login_title: 'Free access',
+    login_desc: 'Sign in has been removed. Churomi is free to use.',
     label_email: 'Email',
     label_password: 'Password',
     ph_password: 'Password',
     btn_back: 'Back',
     btn_forgot_pw: 'Forgot password?',
-    signup_title: 'Create account',
-    signup_desc: 'We will send a verification email. You must verify before you can log in.',
+    signup_title: 'Free access',
+    signup_desc: 'Account creation has been removed. Churomi is free to use.',
     label_password_confirm: 'Confirm password',
     ph_password_confirm: 'Confirm password',
     btn_create: 'Create',
     btn_already_have: 'Already have an account?',
-    forgot_title: 'Reset password',
-    forgot_desc: 'We will email you a password reset link.',
-    btn_send_reset: 'Send reset email',
+    forgot_title: 'Free access',
+    forgot_desc: 'Password reset is not needed because sign in has been removed.',
+    btn_send_reset: 'Free access',
     app_title: 'Dashboard',
-    label_membership: 'Membership',
-    label_devices_online: 'Devices signed in',
+    label_membership: 'Access',
+    label_devices_online: 'Devices',
     toggle_hide_activity: 'Hide activity',
     toggle_invisible_mode: 'Invisible mode',
     toggle_auto_renew: 'Auto renew monthly',
     btn_menu: 'Menu',
     btn_refresh: 'Refresh',
-    btn_logout: 'Log out',
+    btn_logout: 'Reset settings',
     menu_title: 'Menu',
-    menu_desc: 'Billing and account actions.',
-    menu_contact_prefix: 'Want e-Transfer / WeChat Pay / Alipay? Contact',
-    label_payment: 'Payment',
-    plan_subscription_monthly: 'Monthly subscription (CAD 30)',
-    payment_note_sub: 'Renews monthly until canceled.',
-    btn_buy_30_days: 'Buy 30 days',
-    btn_subscribe_monthly: 'Subscribe monthly',
-    btn_subscribe: 'Subscribe',
-    btn_payments_history: 'Payments history',
+    menu_desc: 'Free access. No account or payment required.',
+    menu_contact_prefix: 'Need help? Contact',
+    label_payment: 'Payment removed',
+    plan_subscription_monthly: 'Free access',
+    payment_note_sub: 'No payment or subscription required.',
+    btn_buy_30_days: 'Free access',
+    btn_subscribe_monthly: 'Free access',
+    btn_subscribe: 'Free',
+    btn_payments_history: 'Payments removed',
     btn_legal: 'Legal',
-    btn_logout_all: 'Log out all devices',
+    btn_logout_all: 'Reset devices',
     legal_title: 'Legal',
     legal_desc: 'Privacy policy, terms, and license/EULA.',
     btn_privacy: 'Privacy Policy',
@@ -150,11 +153,11 @@ const I18N = {
     btn_contact: 'Contact',
     btn_view_eula: 'View EULA / License',
     payments_title: 'Payments',
-    payments_desc: 'Recent Stripe payments linked to your account.',
-    msg_opening_stripe: 'Opening Stripe checkout...',
-    msg_missing_login: 'Please log in first.',
+    payments_desc: 'Payments are disabled because Churomi is free to use.',
+    msg_opening_stripe: 'Churomi is free to use.',
+    msg_missing_login: 'No login is required.',
     msg_missing_device_id: 'Missing device id. Please reopen the popup.',
-    msg_checkout_failed: 'Checkout failed: '
+    msg_checkout_failed: 'Request failed: '
   },
   zh: {
     welcome_title: '欢迎',
@@ -162,7 +165,7 @@ const I18N = {
     btn_login: '登录',
     btn_signup: '注册',
     login_title: '登录',
-    login_desc: '使用你在 Firebase Auth 注册的邮箱和密码。',
+    login_desc: '使用你在 sign-in 注册的邮箱和密码。',
     label_email: '邮箱',
     label_password: '密码',
     ph_password: '密码',
@@ -199,65 +202,65 @@ const I18N = {
     btn_contact: '联系',
     btn_view_eula: '查看 EULA / 许可',
     payments_title: '支付',
-    payments_desc: '与你账号关联的 Stripe 支付记录。'
+    payments_desc: '与你账号关联的 payment 支付记录。'
   }
 };
 
 // Force known-good Chinese translations (avoid mojibake if the file encoding is mis-detected anywhere).
 I18N.zh = {
   welcome_title: '\u6b22\u8fce',
-  welcome_desc: '\u9690\u85cf\u4f60\u7684\u9875\u9762\u6d3b\u52a8\u3002\u767b\u5f55\u540e\u5f00\u59cb\u4f7f\u7528\u3002',
-  btn_login: '\u767b\u5f55',
-  btn_signup: '\u6ce8\u518c',
-  login_title: '\u767b\u5f55',
-  login_desc: '\u4f7f\u7528\u4f60\u5728 Firebase Auth \u6ce8\u518c\u7684\u90ae\u7bb1\u548c\u5bc6\u7801\u3002',
+  welcome_desc: '\u9690\u85cf\u4f60\u7684\u9875\u9762\u6d3b\u52a8\u3002\u514d\u8d39\u4f7f\u7528\uff0c\u65e0\u9700\u767b\u5f55\u3002',
+  btn_login: '\u514d\u8d39\u4f7f\u7528',
+  btn_signup: '\u514d\u8d39\u4f7f\u7528',
+  login_title: '\u514d\u8d39\u8bbf\u95ee',
+  login_desc: '\u5df2\u79fb\u9664\u767b\u5f55\uff0cChuromi \u53ef\u514d\u8d39\u4f7f\u7528\u3002',
   label_email: '\u90ae\u7bb1',
   label_password: '\u5bc6\u7801',
   ph_password: '\u5bc6\u7801',
   btn_back: '\u8fd4\u56de',
   btn_forgot_pw: '\u5fd8\u8bb0\u5bc6\u7801\uff1f',
-  signup_title: '\u6ce8\u518c',
-  signup_desc: '\u6211\u4eec\u4f1a\u53d1\u9001\u9a8c\u8bc1\u90ae\u4ef6\u3002\u9a8c\u8bc1\u540e\u624d\u80fd\u767b\u5f55\u3002',
+  signup_title: '\u514d\u8d39\u8bbf\u95ee',
+  signup_desc: '\u5df2\u79fb\u9664\u8d26\u53f7\u521b\u5efa\uff0cChuromi \u53ef\u514d\u8d39\u4f7f\u7528\u3002',
   label_password_confirm: '\u786e\u8ba4\u5bc6\u7801',
   ph_password_confirm: '\u786e\u8ba4\u5bc6\u7801',
   btn_create: '\u521b\u5efa',
   btn_already_have: '\u5df2\u6709\u8d26\u53f7\uff1f',
-  forgot_title: '\u91cd\u7f6e\u5bc6\u7801',
-  forgot_desc: '\u6211\u4eec\u4f1a\u53d1\u9001\u5bc6\u7801\u91cd\u7f6e\u94fe\u63a5\u5230\u4f60\u7684\u90ae\u7bb1\u3002',
-  btn_send_reset: '\u53d1\u9001\u91cd\u7f6e\u90ae\u4ef6',
+  forgot_title: '\u514d\u8d39\u8bbf\u95ee',
+  forgot_desc: '\u5df2\u79fb\u9664\u767b\u5f55\uff0c\u4e0d\u9700\u8981\u91cd\u7f6e\u5bc6\u7801\u3002',
+  btn_send_reset: '\u514d\u8d39\u4f7f\u7528',
   app_title: '\u63a7\u5236\u53f0',
-  label_membership: '\u4f1a\u5458',
-  label_devices_online: '\u5df2\u767b\u5f55\u8bbe\u5907',
+  label_membership: '\u8bbf\u95ee\u6743\u9650',
+  label_devices_online: '\u8bbe\u5907',
   toggle_hide_activity: '\u9690\u85cf\u6d3b\u52a8',
   toggle_invisible_mode: '\u9690\u8eab\u6a21\u5f0f',
-  toggle_auto_renew: '\u6bcf\u6708\u81ea\u52a8\u7eed\u8d39',
+  toggle_auto_renew: '\u514d\u8d39\u8bbf\u95ee',
   btn_menu: '\u83dc\u5355',
   btn_refresh: '\u5237\u65b0',
-  btn_logout: '\u9000\u51fa\u767b\u5f55',
+  btn_logout: '\u91cd\u7f6e\u8bbe\u7f6e',
   menu_title: '\u83dc\u5355',
-  menu_desc: '\u8d26\u5355\u4e0e\u8d26\u53f7\u64cd\u4f5c\u3002',
-  menu_contact_prefix: '\u60f3\u7528\u7535\u90ae\u8f6c\u8d26/\u5fae\u4fe1/\u652f\u4ed8\u5b9d\uff1f\u8054\u7cfb',
-  label_payment: '\u652f\u4ed8',
-  plan_subscription_monthly: '\u6bcf\u6708\u8ba2\u9605\uff08CAD 30\uff09',
-  payment_note_sub: '\u6bcf\u6708\u81ea\u52a8\u7eed\u8d39\uff0c\u53ef\u968f\u65f6\u53d6\u6d88\u3002',
-  btn_buy_30_days: '\u8d2d\u4e70 30 \u5929',
-  btn_subscribe_monthly: '\u6bcf\u6708\u8ba2\u9605',
-  btn_subscribe: '\u8ba2\u9605',
-  btn_payments_history: '\u652f\u4ed8\u8bb0\u5f55',
+  menu_desc: '\u514d\u8d39\u8bbf\u95ee\uff0c\u65e0\u9700\u8d26\u53f7\u6216\u652f\u4ed8\u3002',
+  menu_contact_prefix: '\u9700\u8981\u5e2e\u52a9\uff1f\u8054\u7cfb',
+  label_payment: '\u5df2\u79fb\u9664\u652f\u4ed8',
+  plan_subscription_monthly: '\u514d\u8d39\u8bbf\u95ee',
+  payment_note_sub: '\u65e0\u9700\u652f\u4ed8\u6216\u8ba2\u9605\u3002',
+  btn_buy_30_days: '\u514d\u8d39\u4f7f\u7528',
+  btn_subscribe_monthly: '\u514d\u8d39\u8bbf\u95ee',
+  btn_subscribe: '\u514d\u8d39',
+  btn_payments_history: '\u5df2\u79fb\u9664\u652f\u4ed8',
   btn_legal: '\u6cd5\u5f8b',
-  btn_logout_all: '\u9000\u51fa\u6240\u6709\u8bbe\u5907',
+  btn_logout_all: '\u91cd\u7f6e\u8bbe\u5907',
   legal_title: '\u6cd5\u5f8b',
   legal_desc: '\u9690\u79c1\u653f\u7b56\u3001\u6761\u6b3e\u4e0e\u8bb8\u53ef/EULA\u3002',
   btn_privacy: '\u9690\u79c1\u653f\u7b56',
   btn_terms: '\u670d\u52a1\u6761\u6b3e',
   btn_contact: '\u8054\u7cfb',
   btn_view_eula: '\u67e5\u770b EULA / \u8bb8\u53ef',
-  payments_title: '\u652f\u4ed8',
-  payments_desc: '\u4e0e\u4f60\u8d26\u53f7\u5173\u8054\u7684 Stripe \u652f\u4ed8\u8bb0\u5f55\u3002',
-  msg_opening_stripe: '\u6b63\u5728\u6253\u5f00 Stripe \u652f\u4ed8\u9875\u9762...',
-  msg_missing_login: '\u8bf7\u5148\u767b\u5f55\u3002',
+  payments_title: '\u5df2\u79fb\u9664\u652f\u4ed8',
+  payments_desc: '\u5df2\u79fb\u9664\u652f\u4ed8\uff0cChuromi \u53ef\u514d\u8d39\u4f7f\u7528\u3002',
+  msg_opening_stripe: 'Churomi \u53ef\u514d\u8d39\u4f7f\u7528\u3002',
+  msg_missing_login: '\u4e0d\u9700\u8981\u767b\u5f55\u3002',
   msg_missing_device_id: '\u7f3a\u5c11\u8bbe\u5907 ID\uff0c\u8bf7\u91cd\u65b0\u6253\u5f00\u6269\u5c55\u3002',
-  msg_checkout_failed: '\u652f\u4ed8\u521b\u5efa\u5931\u8d25\uff1a'
+  msg_checkout_failed: '\u8bf7\u6c42\u5931\u8d25\uff1a'
 };
 
 const getLang = async () => {
@@ -351,6 +354,22 @@ const setMenuMsg = (text, kind = '') => {
 const initBilling = async () => {
   const planEl = document.getElementById('billingPlan');
   const btnUpgrade = document.getElementById('btnUpgrade');
+  const btnPayments = document.getElementById('btnPayments');
+  const btnLogoutAll = document.getElementById('btnLogoutAll');
+  const billingCard = planEl?.closest?.('.card');
+
+  if (FREE_MODE) {
+    if (billingCard) billingCard.hidden = true;
+    for (const el of [btnUpgrade, btnPayments, btnLogoutAll]) {
+      if (!el) continue;
+      el.hidden = true;
+      el.disabled = true;
+      el.setAttribute('aria-hidden', 'true');
+    }
+    setMenuMsg('', '');
+    return;
+  }
+
   if (!btnUpgrade) return;
 
   const {billing_plan} = await chrome.storage.local.get({billing_plan: 'sub'});

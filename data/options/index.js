@@ -2,11 +2,13 @@
 
 const $ = (id) => document.getElementById(id);
 
+const FREE_MODE = true;
+const FREE_MEMBERSHIP = Object.freeze({status: 'active', plan: 'free', active: true, valid_until: 0, free: true});
+
 const STORAGE_DEFAULTS = {
   backendUrl:
     typeof CHUROMI_DEFAULTS === 'object' && CHUROMI_DEFAULTS.backendUrl ? CHUROMI_DEFAULTS.backendUrl : 'https://api.churomi.com',
-  firebaseApiKey:
-    typeof CHUROMI_DEFAULTS === 'object' && CHUROMI_DEFAULTS.firebaseApiKey ? CHUROMI_DEFAULTS.firebaseApiKey : '',
+  firebaseApiKey: '',
   device_id: '',
   auth: null,
   authEmail: '',
@@ -128,6 +130,11 @@ const setBackendStatus = (text) => {
 
 const renderAccount = (prefs) => {
   if (!els.accountInfo) return;
+  if (FREE_MODE) {
+    els.accountInfo.textContent = 'Free access is active. No account, login, or payment is required.';
+    return;
+  }
+
   if (!isAuthValid(prefs.auth)) {
     els.accountInfo.textContent = 'Not logged in.';
     return;
@@ -149,7 +156,6 @@ const syncLegalLinks = () => {
 const loadState = async () => {
   const prefs = await chrome.storage.local.get(STORAGE_DEFAULTS);
   if (els.backendUrl) els.backendUrl.value = String(prefs.backendUrl || '');
-  if (els.firebaseApiKey) els.firebaseApiKey.value = String(prefs.firebaseApiKey || '');
   if (els.enabled) els.enabled.checked = isEnabledEverywhere(prefs);
   if (els.log) els.log.checked = Boolean(prefs.log);
   renderAccount(prefs);
@@ -160,8 +166,14 @@ const loadState = async () => {
 const saveBackend = async () => {
   setToast('', '');
   const backendUrl = normalizeBackendUrl(els.backendUrl?.value || '');
-  const firebaseApiKey = String(els.firebaseApiKey?.value || '').trim();
-  await chrome.storage.local.set({backendUrl, firebaseApiKey});
+  await chrome.storage.local.set({
+    backendUrl,
+    firebaseApiKey: '',
+    auth: null,
+    authEmail: '',
+    membership: {...FREE_MEMBERSHIP},
+    membership_checked_at: Date.now()
+  });
   syncLegalLinks();
   setToast('Saved.', 'ok');
   try {
@@ -206,15 +218,16 @@ const logout = async () => {
   setToast('', '');
   await chrome.storage.local.set({
     auth: null,
-    membership: null,
-    membership_checked_at: 0,
+    authEmail: '',
+    membership: {...FREE_MEMBERSHIP},
+    membership_checked_at: Date.now(),
     enabled: false,
     hosts: [],
     stealth_icon: false,
     auto_renew: false
   });
   await loadState();
-  setToast('Logged out.', 'ok');
+  setToast(FREE_MODE ? 'Settings reset.' : 'Logged out.', 'ok');
   try {
     chrome.runtime.sendMessage({method: 'sync'});
   } catch {}
